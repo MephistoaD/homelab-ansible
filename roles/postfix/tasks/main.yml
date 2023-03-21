@@ -1,0 +1,43 @@
+# WHAT THIS TASK DOES: ################################################################
+# INSTALL POSTFIX AND DEPENDENCIES                                                    #
+# CONFIGURE POSTFIX TO SEND MAILS USING 1871elsenyor@gmail.com                        #
+# SRC: https://geekistheway.com/2021/03/07/configuring-e-mail-alerts-on-your-proxmox/ #
+#######################################################################################
+
+- name: POSTFIX install
+  block:
+  - name: Install dependencies
+    apt:
+      pkg:
+        - libsasl2-modules
+        - mailutils
+        - postfix
+      state: present
+    notify: Reload postfix.service
+
+
+
+- name: POSTFIX configuration
+  block:
+  - name: Place main.cf on server
+    copy:
+      src: main.cf
+      dest: /etc/postfix/main.cf
+      owner: root
+      group: root
+      mode: '0644'
+    notify:
+      - Reload postfix.service
+
+- name: POSTFIX credentials
+  block:
+  - name: Place sasl_passwd on server
+    copy:
+      src: sasl_passwd
+      dest: /etc/postfix/sasl_passwd
+      owner: root
+      group: root
+      mode: '0600'
+    notify:
+      - Introduce credentials into postfix
+      - Reload postfix.service

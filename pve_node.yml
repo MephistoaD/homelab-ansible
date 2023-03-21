@@ -1,0 +1,12 @@
+---
+# file: pve_nodes.yml
+- hosts: pve_node
+  become: true
+  become_user: root
+  roles:
+    - pve_node
+    - debian
+    - postfix
+
+# the role pve_node has to fix the repositories first before running other roles.
+# in every other role things should be used as dependencies.

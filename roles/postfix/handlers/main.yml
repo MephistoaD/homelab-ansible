@@ -1,0 +1,8 @@
+- name: Introduce credentials into postfix
+  shell:
+    cmd: postmap /etc/postfix/sasl_passwd
+
+- name: Reload postfix.service
+  service:
+    name: postfix
+    state: reloaded

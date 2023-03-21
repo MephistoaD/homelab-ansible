@@ -1,0 +1,35 @@
+---
+- name: Find current interface name
+  shell: dmesg | grep -i 'renamed from e.*' | awk '{print $5}' | sed 's/:$//'
+  register: consistent_interface_name
+  changed_when: 0
+
+- name: Find wanted interface name
+  shell: dmesg | grep -i 'renamed from e.*' | awk '{print $8}' | sed 's/:$//'
+  register: interface_name
+  changed_when: 0
+  when: consistent_interface_name.stdout != ""
+
+- name: Disable consistent device naming
+  lineinfile:
+    path: /etc/default/grub
+    regexp: '^GRUB_CMDLINE_LINUX='
+    line: 'GRUB_CMDLINE_LINUX="net.ifnames=0 biosdevname=0"'
+    state: present
+  when: consistent_interface_name.stdout != ""
+
+- name: Regenerate GRUB configuration
+  command: update-grub
+  when: consistent_interface_name.stdout != ""
+
+- name: Rename old interface name in /etc/network/interfaces
+  replace:
+    path: /etc/network/interfaces
+    regexp: "{{ consistent_interface_name.stdout }}"
+    replace: "{{ interface_name.stdout }}"
+  when: consistent_interface_name.stdout != ""
+
+- name: Reboot the system
+  reboot:
+    msg: "Reboot initiated by Ansible for consistent device naming"
+  when: consistent_interface_name.stdout != ""

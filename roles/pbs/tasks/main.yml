@@ -1,0 +1,67 @@
+
+- name: PBS repos
+  block:
+  - name: (pbs_install) add pbs apt-key
+    apt_key:
+      url: https://enterprise.proxmox.com/debian/proxmox-release-bullseye.gpg
+      state: present
+
+  - name: add pbs no subscription repository
+    apt_repository:
+      repo: 'deb http://download.proxmox.com/debian/pbs bullseye pbs-no-subscription'
+      state: present
+      filename: pbs
+      update_cache: yes
+
+- name: PBS install
+  block:
+  - name: install packages
+    apt:
+      pkg:
+        - proxmox-backup-server
+      state: present
+    notify:
+      - Disable and stop zfs-zed.service
+
+  - name: remove pve-enterprise.list
+    file:
+      path: /etc/apt/sources.list.d/pbs-enterprise.list
+      state: absent
+
+- name: PVE nag box
+  block:
+  - name: place service to remove nag-box on server
+    copy:
+      src: pve_nag_box.service
+      dest: /etc/systemd/system/pve_nag_box.service
+      owner: root
+      group: root
+      mode: '0644'
+    notify:
+      - Enable nag-box service
+
+- name: PBS dark theme
+  # äquivaltent zu bash <(curl -s https://raw.githubusercontent.com/Luckyvb/PBSDiscordDark/master/PBSDiscordDark.sh ) install
+  block:
+  - name: Download dark theme
+    ansible.builtin.get_url:
+      url: https://raw.githubusercontent.com/Luckyvb/PBSDiscordDark/master/PBSDiscordDark.sh
+      dest: /usr/local/bin/PBSDiscordDark.sh
+      mode: '0744'
+
+  - name: Install dark theme
+    command: 'bash /usr/local/bin/PBSDiscordDark.sh install'
+    register: out
+    failed_when: out.rc not in [ 0, 2 ]
+    changed_when: 0 # no change if already installed
+    when:
+      - pbs_discord_dark
+
+
+  - name: Uninstall dark theme
+    command: 'bash /usr/local/bin/PBSDiscordDark.sh uninstall'
+    register: out
+    failed_when: out.rc not in [ 0, 2 ]
+    changed_when: 0 # no change if already uninstalled
+    when:
+      - not pbs_discord_dark

@@ -1,0 +1,27 @@
+all:
+  children:
+    debian:
+      children:
+        pve_node:
+          hosts:
+            pve1:
+              ansible_host: 192.168.1.100
+            pve2:
+              ansible_host: 192.168.1.100
+          vars:
+            pve_discord_dark: true
+        guests:
+          children:
+            vm: # groupname is a variable in some roles
+            lxc: # groupname is a variable in some roles
+              children:
+                pbs:
+                  hosts:
+                    pbs.infra.lab:
+                      ansible_host: 192.168.1.100
+                  vars:
+                    pbs_discord_dark: true
+                pve_proxy:
+                  hosts:
+                    pve.lab:
+                      ansible_host: 192.168.1.100

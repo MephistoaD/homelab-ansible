@@ -1,0 +1,103 @@
+
+- name: PVE repos
+  block:
+    - name: remove pve-enterprise.list
+      file:
+        path: /etc/apt/sources.list.d/pve-enterprise.list
+        state: absent
+
+    - name: enable no-subscription repo
+      apt_repository:
+        repo: 'deb http://download.proxmox.com/debian/pve bullseye pve-no-subscription'
+        state: present
+
+    - name: Update all repos and cache
+      apt:
+        update_cache: yes
+        force_apt_get: yes
+        cache_valid_time: "{{ update_cache_valid_time }}"
+      changed_when: 0 # does not count as change
+
+- name: PVE nag box
+  block:
+  - name: place service to remove nag-box on server
+    copy:
+      src: pve_nag_box.service
+      dest: /etc/systemd/system/pve_nag_box.service
+      owner: root
+      group: root
+      mode: '0644'
+    notify:
+      - Enable nag-box service
+
+- name: PVE dns
+  block:
+  - name: Place custom resolve.conf
+    copy:
+      src: resolv.conf
+      dest: /etc/resolv.conf
+      owner: root
+      group: root
+      mode: '0644'
+
+- name: PVE bash
+  block:
+  - name: Copy bashrc to node
+    copy:
+      src: bashrc
+      dest: /root/.bashrc
+      owner: root
+      group: root
+      mode: '0644'
+
+- name: PVE sdn install
+  block:
+  - name: install sdn-needed packages
+    apt:
+      pkg:
+        - libpve-network-perl
+        - ifupdown2
+        # needed by controller for EVPN
+        - frr
+        - frr-pythontools
+      state: present
+
+  - name: include sdn config in /etc/network/interfaces
+    blockinfile:
+      path: /etc/network/interfaces
+      block: |
+        source /etc/network/interfaces.d/*
+
+- name: PVE dark theme
+  # äquivaltent zu bash <(curl -s https://raw.githubusercontent.com/Luckyvb/PBSDiscordDark/master/PBSDiscordDark.sh ) install
+  block:
+  - name: Download dark theme
+    ansible.builtin.get_url:
+      url: https://raw.githubusercontent.com/Weilbyte/PVEDiscordDark/master/PVEDiscordDark.sh
+      dest: /usr/local/bin/PVEDiscordDark.sh
+      mode: '0744'
+
+  - name: Install dark theme
+    command: 'bash /usr/local/bin/PVEDiscordDark.sh install'
+    register: out
+    failed_when: out.rc not in [ 0, 2 ]
+    changed_when: 0 # no change if already installed
+    when:
+      - pve_discord_dark
+
+
+  - name: Uninstall dark theme
+    command: 'bash /usr/local/bin/PVEDiscordDark.sh uninstall'
+    register: out
+    failed_when: out.rc not in [ 0, 2 ]
+    changed_when: 0 # no change if already uninstalled
+    when:
+      - not pve_discord_dark
+
+  - name: Uninstall dark theme
+    command: 'bash /usr/local/bin/PVEDiscordDark.sh uninstall'
+    register: out
+    failed_when: out.rc not in [ 0, 2 ]
+    changed_when: 0 # no change if already uninstalled
+    when:
+      - not pve_discord_dark

@@ -1,0 +1,10 @@
+[Unit]
+Description=Remove Proxmox VE subscription notice
+Before=pveproxy.service
+
+[Service]
+Type=oneshot
+ExecStart=/bin/sh -c "grep --files-with-matches --include '*.js' --recursive --null 'checked_command:\s*function(orig_cmd)' /usr/share/ | xargs --null --no-run-if-empty sed --in-place 's/checked_command:\s*function(orig_cmd)\s*{\s*$/& orig_cmd(); return;/'"
+
+[Install]
+WantedBy=pveproxy.service

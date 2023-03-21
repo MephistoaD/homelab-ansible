@@ -1,0 +1,10 @@
+
+
+
+- name: PVE nag box
+  block:
+  - name: Enable nag-box service
+    service:
+      name: pve_nag_box.service
+      enabled: yes
+      state: started
