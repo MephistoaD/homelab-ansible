@@ -93,11 +93,3 @@
     changed_when: 0 # no change if already uninstalled
     when:
       - not pve_discord_dark
-
-  - name: Uninstall dark theme
-    command: 'bash /usr/local/bin/PVEDiscordDark.sh uninstall'
-    register: out
-    failed_when: out.rc not in [ 0, 2 ]
-    changed_when: 0 # no change if already uninstalled
-    when:
-      - not pve_discord_dark
