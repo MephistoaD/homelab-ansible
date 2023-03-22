@@ -1,7 +1,5 @@
 ---
 # file: pve_nodes.yml
 - hosts: pbs
-  become: true
-  become_user: root
   roles:
     - pbs

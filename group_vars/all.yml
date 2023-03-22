@@ -5,8 +5,6 @@ update_cache_valid_time: 10
 
 debian_version: bullseye
 
-ansible_user: root
-
 debian_global_packages:
   # cpu / mem
   - htop

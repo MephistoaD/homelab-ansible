@@ -1,8 +1,6 @@
 ---
 # file: pve_nodes.yml
 - hosts: pve_node
-  become: true
-  become_user: root
   roles:
     - pve_node
     - debian
