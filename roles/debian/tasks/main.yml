@@ -39,4 +39,4 @@
 # IMPORTS
 - name: Import tasks to disable consistent device naming
   include_tasks: disable_consistent_device_naming.yml
-  when: is_lxc is not defined # and is_vm is not defined
+  when: not 'lxc' in group_names # and not 'vm' in group_names

@@ -7,10 +7,4 @@
 - import_playbook: netbox.yml
 
 # TESTING
-- import_playbook: vpn.yml
 - import_playbook: rundeck.yml
-
-
-# VMs
-# - import_playbook: docker.yml
-# - import_playbook: nomad.yml
