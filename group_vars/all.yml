@@ -1,6 +1,5 @@
 ---
 # file: group_vars/all
-max_uptime: 60
 update_cache_valid_time: 10
 
 debian_version: bullseye
