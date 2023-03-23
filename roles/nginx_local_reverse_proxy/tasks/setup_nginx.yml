@@ -1,0 +1,38 @@
+---
+- name: Configure Nginx for NetBox
+  block:
+    - name: Install Packages
+      apt:
+        name: "{{ item }}"
+        state: latest
+      loop:
+        - nginx
+        - python3-pip
+
+    - name: Install python dependencies
+      pip:
+        name: "{{ item }}"
+        state: present
+      loop:
+        - cryptography
+
+    - name: Create private key (RSA, 4096 bits)
+      community.crypto.openssl_privatekey:
+        path: "{{ ssl_key_path }}"
+      notify:
+        - Reload Nginx service
+
+    - name: Create simple self-signed certificate
+      community.crypto.x509_certificate:
+        path: "{{ ssl_cert_path }}"
+        privatekey_path: "{{ ssl_key_path }}"
+        provider: selfsigned
+      notify:
+        - Reload Nginx service
+
+    - name: Remove default Nginx config file
+      file:
+        path: /etc/nginx/sites-enabled/default
+        state: absent
+      notify:
+        - Reload Nginx service
