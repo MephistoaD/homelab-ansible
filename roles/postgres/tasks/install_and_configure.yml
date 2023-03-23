@@ -1,0 +1,46 @@
+---
+- name: Install PostgreSQL and its dependencies
+  apt:
+    name: "{{ item }}"
+    state: present
+  with_items:
+    - postgresql
+    - python3-psycopg2 # needed for ansible compatibility
+
+- name: Disable root user access to PostgreSQL
+  lineinfile:
+    path: /etc/postgresql/13/main/pg_hba.conf
+    regexp: "^local +all +postgres"
+    line: "local   all             postgres                                trust"
+    state: present
+  notify:
+    - Restart postgres
+
+- name: Restart postgres
+  systemd:
+    name: postgresql
+    state: restarted
+  changed_when: 0 # does not count as change
+
+- name: Create PostgreSQL users
+  postgresql_user:
+    name: "{{ item.name }}"
+    password: "{{ item.password }}"
+    state: present
+  with_items: "{{ postgres_users }}"
+
+- name: Create PostgreSQL databases
+  postgresql_db:
+    name: "{{ item.name }}"
+    owner: "{{ item.owner }}"
+  with_items: "{{ postgres_databases }}"
+
+# for additional configuration
+- name: Get Postgres major version
+  shell: "psql --version | awk '{print $3}' | cut -d '.' -f1"
+  register: postgres_major_version_output
+  changed_when: false
+
+- name: Set Postgres major version variable
+  set_fact:
+    postgres_major_version: "{{ postgres_major_version_output.stdout }}"

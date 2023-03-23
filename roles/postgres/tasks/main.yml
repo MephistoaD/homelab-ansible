@@ -1,0 +1,5 @@
+---
+- include_tasks: install_and_configure.yml
+
+# tasks sorted by their category:
+- include_tasks: test.yml
