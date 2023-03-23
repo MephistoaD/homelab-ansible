@@ -3,12 +3,12 @@
   block:
   - name: (pbs_install) add pbs apt-key
     apt_key:
-      url: https://enterprise.proxmox.com/debian/proxmox-release-bullseye.gpg
+      url: https://enterprise.proxmox.com/debian/proxmox-release-{{ debian_version }}.gpg
       state: present
 
   - name: add pbs no subscription repository
     apt_repository:
-      repo: 'deb http://download.proxmox.com/debian/pbs bullseye pbs-no-subscription'
+      repo: 'deb http://download.proxmox.com/debian/pbs {{ debian_version }} pbs-no-subscription'
       state: present
       filename: pbs
       update_cache: yes
