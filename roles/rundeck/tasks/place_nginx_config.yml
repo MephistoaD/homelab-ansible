@@ -1,0 +1,17 @@
+---
+- name: Copy Nginx config file
+  template:
+    src: "nginx.conf.j2"
+    dest: /etc/nginx/sites-available/reverse_proxy.conf
+    mode: '0644'
+  register: nginx_config_file
+  notify:
+    - Reload Nginx service
+
+- name: Enable Nginx config file for NetBox
+  file:
+    src: /etc/nginx/sites-available/reverse_proxy.conf
+    dest: /etc/nginx/sites-enabled/reverse_proxy.conf
+    state: link
+  notify:
+    - Reload Nginx service

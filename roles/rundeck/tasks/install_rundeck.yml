@@ -1,0 +1,63 @@
+---
+- name: Install and configure Rundeck
+  block:
+    - name: Install dependencies
+      apt:
+        name:
+        - "{{ item }}"
+        state: present
+      loop:
+        - openjdk-11-jre-headless
+        - ansible
+
+    - name: Import Rundeck repo signing key
+      apt_key:
+        url: https://packages.rundeck.com/pagerduty/rundeck/gpgkey
+        state: present
+
+    - name: enable no-subscription repo
+      apt_repository:
+        repo: "{{ item }}"
+        state: present
+      loop:
+        - "deb https://packages.rundeck.com/pagerduty/rundeck/any/ any main"
+        - "deb-src https://packages.rundeck.com/pagerduty/rundeck/any/ any main"
+
+    - name: Update apt cache
+      apt:
+        update_cache: yes
+      changed_when: 0
+
+    - name: Install Rundeck
+      apt:
+        name: rundeck
+        state: present
+
+    - name: Replace domain in framework.properties
+      lineinfile:
+        path: /etc/rundeck/framework.properties
+        regexp: "{{ item.regexp }}"
+        line: "{{ item.replace }}"
+      with_items:
+        - { regexp: 'framework.server.name = *', replace: 'framework.server.name = {{ rundeck_fqdn }}' }
+        - { regexp: 'framework.server.hostname = *', replace: 'framework.server.hostname = {{ rundeck_fqdn }}' }
+        - { regexp: 'framework.server.url = *', replace: 'framework.server.url = https://{{ rundeck_fqdn }}' }
+      notify:
+        - Start Rundeck service
+
+    - name: Replace domain in rundeck-config.properties
+      lineinfile:
+        path: /etc/rundeck/rundeck-config.properties
+        regexp: "{{ item.regexp }}"
+        line: "{{ item.replace }}"
+      with_items:
+        - { regexp: 'grails.serverURL=*', replace: 'grails.serverURL=https://{{ rundeck_fqdn }}' }
+      notify:
+        - Start Rundeck service
+
+    - name: Place the systemd service
+      copy:
+        src: rundeck.service
+        dest: /etc/systemd/system/rundeck.service
+      notify:
+        - Start Rundeck service

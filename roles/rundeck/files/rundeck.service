@@ -1,0 +1,15 @@
+[Unit]
+Description=The most awesome distributed command dispatching job console
+After=network.target
+
+[Service]
+Type=simple
+User=rundeck
+Group=rundeck
+ExecStart=/bin/bash -c ". /etc/rundeck/profile && /var/lib/rundeck/rundeckd >> /var/log/rundeck/service.log 2>&1"
+WorkingDirectory=/var/lib/rundeck
+Restart=always
+RestartSec=30s
+
+[Install]
+WantedBy=multi-user.target

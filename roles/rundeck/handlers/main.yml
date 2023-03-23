@@ -1,0 +1,14 @@
+---
+- name: Start Rundeck service
+  systemd:
+    name: rundeckd
+    state: restarted
+    enabled: yes
+  register: rundeck_service
+  ignore_errors: yes
+  notify: Fail if Rundeck service could not be started
+
+- name: Fail if Rundeck service could not be started
+  fail:
+    msg: "Rundeck service failed"
+  when: rundeck_service.failed

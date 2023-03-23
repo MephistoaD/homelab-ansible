@@ -1,0 +1,4 @@
+---
+dependencies:
+  - role: debian
+  - role: nginx_local_reverse_proxy
