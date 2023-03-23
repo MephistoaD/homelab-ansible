@@ -1,0 +1,8 @@
+---
+update_cache_valid_time: 10
+
+debian_version: bullseye
+
+debian_global_packages:
+  # cpu / mem
+  - htop
