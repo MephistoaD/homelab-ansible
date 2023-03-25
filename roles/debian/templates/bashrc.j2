@@ -68,6 +68,17 @@ alias l='ls -CF'
 alias search='grep -iRl'
 alias expose='python3 -m http.server 8000'
 
+function info() {
+    if man "$1" &>/dev/null; then
+        man "$1" | tee /dev/tty
+    elif "$1" --help &>/dev/null; then
+        "$1" --help
+    else
+        "$1" -h
+    fi
+}
+
+
 # bashrc config which is specific for the role
 if [ -f ~/.bashrc_role ]; then
     . ~/.bashrc_role
