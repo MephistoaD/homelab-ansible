@@ -1,0 +1,5 @@
+dependencies:
+  - role: debian
+  - role: postgres
+  - role: redis
+  - role: nginx_local_reverse_proxy

@@ -1,0 +1,33 @@
+---
+netbox_version: "v3.4.5" # change this to the desired version
+netbox_path: "/opt" # standard path for netbox installations following the documentation (not recommended to change)
+netbox_domain: "*" # this works for me, but you may specify yours here
+netbox_secret_key: "random-string" # netbox needs this for hash generation
+
+postgres_users:
+  - name: netbox-user
+    password: password
+postgres_databases:
+  - name: netbox-database
+    owner: netbox-user
+postgres_listen_address: 127.0.0.1
+
+ssl_cert_path: "/etc/ssl/certs/netbox.crt"
+ssl_key_path: "/etc/ssl/private/netbox.key"
+
+
+netbox_admin_user: root
+netbox_admin_mail: me@ho.me
+netbox_admin_password: password
+netbox_token: "token" # netbox api token (needs to be added after install)
+
+custom_tags:
+  - name: "host-lxc"
+    description: "allows lxc-containers to be scheduled on that node"
+    color: "ff6600" # PVE-orange
+  - name: "host-qemu"
+    description: "allows qemu-vms to be scheduled on that node"
+    color: "ff6600" # PVE-orange
+  - name: "state-drained"
+    description: "supresses the presence of guests on the node"
+    color: "ff0000" # red

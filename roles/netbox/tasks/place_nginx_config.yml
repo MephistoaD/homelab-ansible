@@ -1,0 +1,20 @@
+---
+- name: Copy Nginx config file for NetBox
+  copy:
+    src: "{{ netbox_path }}/netbox/contrib/nginx.conf"
+    dest: /etc/nginx/sites-available/netbox
+    mode: '0644'
+    remote_src: yes
+  register: nginx_config_file
+
+- name: Enable Nginx config file for NetBox
+  file:
+    src: /etc/nginx/sites-available/netbox
+    dest: /etc/nginx/sites-enabled/netbox
+    state: link
+
+- name: Reload Nginx service
+  systemd:
+    name: nginx
+    state: reloaded
+  changed_when: false

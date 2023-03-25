@@ -1,0 +1,13 @@
+---
+- name: Setup static files
+  block:
+    - name: Run collectstatic command
+      command: python3 {{ netbox_path }}/netbox/netbox/manage.py collectstatic --noinput
+      register: collectstatic_output
+      failed_when: collectstatic_output.rc > 1
+      changed_when: "'0 static files copied to' not in collectstatic_output.stdout_lines | join(' ')"
+
+    - name: Print collectstatic command output
+      debug:
+        var: collectstatic_output.stdout_lines
+      when: "'0 static files copied to' not in collectstatic_output.stdout_lines | join(' ')"

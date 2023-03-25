@@ -1,0 +1,115 @@
+---
+- name: Install required packages
+  package:
+    name: "{{ item }}"
+    state: present
+  with_items:
+    - python3
+    - python3-pip
+    - python3-venv
+    - python3-dev
+    - build-essential
+    - libxml2-dev
+    - libxslt1-dev
+    - libffi-dev
+    - libpq-dev
+    - libssl-dev
+    - zlib1g-dev
+
+- name: Check Python version
+  command: python3 -c "import sys; assert sys.version_info >= (3, 8)"
+  register: python_version
+  failed_when: python_version.rc != 0
+  changed_when: 0
+
+- name: Download NetBox release
+  get_url:
+    url: "https://github.com/netbox-community/netbox/archive/refs/tags/{{ netbox_version }}.tar.gz"
+    dest: "/tmp/netbox.tar.gz"
+  changed_when: false
+
+- name: Ensure netbox directory exists
+  file:
+    path: "{{ netbox_path }}/netbox-{{ netbox_version }}"
+    state: directory
+
+- name: Extract NetBox release
+  unarchive:
+    src: /tmp/netbox.tar.gz
+    dest: "{{ netbox_path }}/netbox-{{ netbox_version }}"
+    copy: false
+    extra_opts: ["--strip-components", "1"]
+  changed_when: false
+
+- name: Create symlink to NetBox root directory
+  file:
+    src: "{{ netbox_path }}/netbox-{{ netbox_version }}"
+    dest: "{{ netbox_path }}/netbox"
+    state: link
+
+- name: Create netbox group
+  group:
+    name: netbox
+    state: present
+
+- name: Create NetBox system user
+  user:
+    name: netbox
+    system: yes
+    group: netbox
+    home: "{{ netbox_path }}/netbox"
+    shell: /bin/false
+
+- name: Set ownership of media directory
+  file:
+    path: "{{ netbox_path }}/netbox/netbox/media"
+    owner: netbox
+    group: netbox
+    state: directory
+  changed_when: false
+
+- name: Copy configuration file
+  template:
+    src: configuration.py.j2
+    dest: "{{ netbox_path }}/netbox/netbox/netbox/configuration.py"
+    owner: netbox
+    group: netbox
+    mode: 0644
+
+- name: Add napalm to local_requirements.txt
+  lineinfile:
+    path: "{{ netbox_path }}/netbox/local_requirements.txt"
+    line: 'napalm'
+    create: yes
+
+- name: Create symbolic link for netbox-housekeeping script
+  file:
+    src: "{{ netbox_path }}/netbox/contrib/netbox-housekeeping.sh"
+    dest: /etc/cron.daily/netbox-housekeeping
+    state: link
+
+- name: Read files with required python packages
+  shell: |
+    #!/bin/bash
+
+    # Definiere die Dateinamen in einer Shell-Variable
+    dateien=(requirements.txt local_requirements.txt base_requirements.txt)
+
+    # Führe für jede Datei einen cat-Befehl aus und entferne Kommentarzeilen mit sed
+    for datei in "${dateien[@]}"; do
+      cat "{{ netbox_path }}/netbox/$datei" | sed '/^\s*#/d; /^$/d'
+    done
+  register: requirements
+  args:
+    executable: /bin/bash
+  changed_when: 0
+
+- name: Create list of required python packages
+  set_fact:
+    liste: "{{ requirements.stdout_lines }}"
+
+- name: Install required python packages with pip3
+  become: true
+  pip:
+    name: "{{ item }}"
+  loop: "{{ liste }}"

@@ -1,0 +1,89 @@
+---
+- name: Install pynetbox via pip3
+  pip:
+    name:
+      - "{{ item }}"
+    executable: pip3
+  loop:
+    - pynetbox
+
+- name: Create api token
+  become: true
+  become_user: postgres
+  shell: psql -d {{ postgres_databases[0].name }} -c "INSERT INTO public.users_token (id, created, expires, key, write_enabled, description, user_id, allowed_ips, last_used) VALUES ((SELECT COALESCE(MAX(id), 0) + 1 FROM public.users_token), CURRENT_TIMESTAMP, NULL, '{{ netbox_token }}', true, 'netbox_token (ansible)', 1, '{}', NULL);"
+  register: create_token
+  failed_when: create_token.rc not in [ 0, 1 ]
+  changed_when: create_token.rc == 0
+
+- name: Remove old api tokens
+  become: true
+  become_user: postgres
+  shell: psql -d {{ postgres_databases[0].name }} -c "DELETE FROM public.users_token WHERE key != '{{ netbox_token }}' AND description = 'netbox_token (ansible)';"
+  register: delete_token
+  failed_when: delete_token.rc not in [ 0, 1 ]
+  changed_when: delete_token.stdout != "DELETE 0"
+
+- name: Create fields
+  block:
+  - name: Create Proxmox ID custom field
+    netbox.netbox.netbox_custom_field:
+      netbox_url: https://{{ ansible_default_ipv4.address }}
+      netbox_token: "{{ netbox_token }}"
+      validate_certs: false
+      data:
+        content_types:
+          - virtualization.virtualmachine
+        required: true
+        name: "proxmox_id"
+        description: "Proxmox VM/CT ID"
+        type: "integer"
+        validation_minimum: 100
+
+  - name: Create Proxmox Type custom field
+    netbox.netbox.netbox_custom_field:
+      netbox_url: https://{{ ansible_default_ipv4.address }}
+      netbox_token: "{{ netbox_token }}"
+      validate_certs: false
+      data:
+        content_types:
+          - virtualization.virtualmachine
+        required: true
+        name: "proxmox_type"
+        description: "Proxmox type (VM or CT)"
+        type: "select"
+        default: "LXC"
+        choices:
+          - "LXC"
+          - "QEMU"
+
+  - name: Get names of all available roles
+    delegate_to: localhost
+    become: false
+    shell:
+      executable: /bin/bash
+      cmd: |
+        ansible-galaxy list | tail -n +2 | cut -d" " -f2 | cut -d"," -f1
+    register: available_roles
+    changed_when: 0
+
+  - name: Create a Tag for each available role
+    netbox.netbox.netbox_tag:
+      netbox_url: https://{{ ansible_default_ipv4.address }}
+      netbox_token: "{{ netbox_token }}"
+      validate_certs: false
+      data:
+        name: "role-{{ item }}"
+        description: "ansible role"
+        color: "0066cc" # light blue
+    loop: "{{ available_roles.stdout.split() }}"
+
+  - name: Create custom tags
+    netbox.netbox.netbox_tag:
+      netbox_url: https://{{ ansible_default_ipv4.address }}
+      netbox_token: "{{ netbox_token }}"
+      validate_certs: false
+      data:
+        name: "{{ item.name }}"
+        description: "{{ item.description }}"
+        color: "{{ item.color }}"
+    with_items: "{{ custom_tags }}"

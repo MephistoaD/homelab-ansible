@@ -1,0 +1,5 @@
+---
+# file: pve_nodes.yml
+- hosts: netbox
+  roles:
+    - netbox

@@ -3,3 +3,5 @@ testing.yml
 
 # postfix
 sasl_passwd
+
+group_vars/netbox.yml

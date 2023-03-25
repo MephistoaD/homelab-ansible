@@ -1,0 +1,61 @@
+---
+- name: Configure Nginx for NetBox
+  vars: # predefined values by documentation
+    ssl_cert_path: "/etc/ssl/certs/netbox.crt"
+    ssl_key_path: "/etc/ssl/private/netbox.key"
+  block:
+    - name: Install Nginx
+      apt:
+        name: nginx
+        state: latest
+
+    - name: Create private key (RSA, 4096 bits)
+      community.crypto.openssl_privatekey:
+        path: "{{ ssl_key_path }}"
+      notify:
+        - Reload Nginx service
+
+    - name: Create simple self-signed certificate
+      community.crypto.x509_certificate:
+        path: "{{ ssl_cert_path }}"
+        privatekey_path: "{{ ssl_key_path }}"
+        provider: selfsigned
+      notify:
+        - Reload Nginx service
+
+    - name: Update Nginx config file for NetBox
+      replace:
+        path: "{{ netbox_path }}/netbox/contrib/nginx.conf"
+        regexp: 'netbox.example.com'
+        replace: '{{ "_" if netbox_domain == "*" else netbox_domain }}'
+      changed_when: 0
+
+    - name: Copy Nginx config file for NetBox
+      copy:
+        src: "{{ netbox_path }}/netbox/contrib/nginx.conf"
+        dest: /etc/nginx/sites-available/netbox
+        mode: '0644'
+        remote_src: yes
+      register: nginx_config_file
+      notify:
+        - Reload Nginx service
+
+    - name: Remove default Nginx config file
+      file:
+        path: /etc/nginx/sites-enabled/default
+        state: absent
+      notify:
+        - Reload Nginx service
+
+    - name: Enable Nginx config file for NetBox
+      file:
+        src: /etc/nginx/sites-available/netbox
+        dest: /etc/nginx/sites-enabled/netbox
+        state: link
+      notify:
+        - Reload Nginx service
+
+    - name: Reload Nginx service
+      systemd:
+        name: nginx
+        state: reloaded

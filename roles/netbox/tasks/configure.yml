@@ -1,0 +1,89 @@
+---
+- name: Ensure the auth_user table exists
+  block:
+    - name: Check if auth_user table exists
+      postgresql_query:
+        login_host: localhost
+        login_user: "{{ postgres_users[0].name }}"
+        login_password: "{{ postgres_users[0].password }}"
+        db: "{{ postgres_databases[0].name }}"
+        query: "SELECT to_regclass('public.auth_user')"
+      register: auth_user_check
+
+    - name: Run migration script if auth_user table doesn't exist
+      command: python3 manage.py migrate
+      args:
+        chdir: "{{ netbox_path }}/netbox/netbox"
+      register: auth_user_creation
+      when: auth_user_check.query_result[0]['to_regclass'] != "auth_user"
+
+    - name: Print output of migration script
+      debug:
+        msg: "The auth_user table was created {{ 'sucessfully' if auth_user_creation.rc == 0 else 'with errors' }} in {{ postgres_databases[0].name }} database"
+      when: auth_user_creation is defined and auth_user_creation.skipped is not defined
+    # throws errors when auth_user_creation is not defined and rc is read
+      failed_when: auth_user_creation is defined and auth_user_creation.skipped is not defined and auth_user_creation.rc != 0
+
+- name: Create superuser login
+  block:
+    - name: Run createsuperuser command
+      command: python3 {{ netbox_path }}/netbox/netbox/manage.py createsuperuser --username={{ netbox_admin_user }} --email={{ netbox_admin_mail }} --noinput
+      environment:
+        DJANGO_SUPERUSER_PASSWORD: "{{ netbox_admin_password }}"
+      register: createsuperuser_output
+      failed_when: createsuperuser_output.rc > 1
+      changed_when: createsuperuser_output.rc == 0
+
+    - name: Print createsuperuser command output
+      debug:
+        var: createsuperuser_output.stdout_lines
+      when: createsuperuser_output.rc == 0
+
+- name: Ensure netbox is running and a login is possible
+  block:
+    - name: Try test login
+      shell: |
+        #!/usr/bin/env bash
+
+        # Run the first command in the background and capture its output
+        python3 {{ netbox_path }}/netbox/netbox/manage.py runserver 0.0.0.0:8000 --insecure > /tmp/output.txt 2>&1 &
+
+        # Capture the process ID of the background process
+        SERVER_PID=$!
+
+        # Wait for the server to start
+        while ! grep -q "Starting development server" /tmp/output.txt; do
+          sleep 1
+        done
+
+        # Run the second command
+        curl 'http://{{ ansible_default_ipv4.address }}:8000/login' -X POST -H 'Referer: http://{{ ansible_default_ipv4.address }}:8000/login/' -H 'Cookie: csrftoken=5bwvjfhHvZ6u8tE5B6dByZIlddrjHcFU' --data-raw 'csrfmiddlewaretoken=STkqo3PEmtIlfPpRlVgJrfSBOY1vQVNENUGLx8WbHiEFd8TMMRjaP4qMR1iEnXio&next=%2F&username={{ netbox_admin_user }}&password={{ netbox_admin_password }}' > /dev/null 2>&1
+
+        # Wait for the login request to complete
+        sleep 2
+
+        # Check if the web server is still running
+        if ps -p $SERVER_PID > /dev/null; then
+          # Terminate the web server process
+          kill $SERVER_PID
+        fi
+
+        # default return value
+        exit=1
+
+        # Check the output of the first command for the specified string
+        if grep 'POST' /tmp/output.txt | grep -Eq "3[0-9][0-9] 0"; then
+          # The string was found, return 0
+          exit=0
+        fi
+        cat /tmp/output.txt
+        rm /tmp/output.txt
+        exit $exit
+      register: test_user_weblogin
+      failed_when: test_user_weblogin.rc > 1
+      changed_when: 0
+
+    - name: Print error on failed testlogin
+      fail:
+        msg: "Failed with return code {{ test_user_weblogin.rc }}: {{ test_user_weblogin.stdout_lines }}"
+      when: test_user_weblogin.rc != 0

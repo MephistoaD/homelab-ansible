@@ -1,0 +1,52 @@
+---
+- name: Configure gunicorn
+  block:
+    # Copy the default Gunicorn configuration to the NetBox directory
+    - name: Copy Gunicorn configuration file
+      copy:
+        src: "{{ netbox_path }}/netbox/contrib/gunicorn.py"
+        dest: "{{ netbox_path }}/netbox/gunicorn.py"
+        remote_src: yes
+      register: gunicorn_config
+
+    - name: Adjust gunicorn binary path in netbox.service (no venv)
+      lineinfile:
+        path: "{{ netbox_path }}/netbox/contrib/netbox.service"
+        regexp: 'ExecStart={{ netbox_path }}/netbox/venv/bin/gunicorn'
+        line: 'ExecStart=/usr/local/bin/gunicorn --pid /var/tmp/netbox.pid --pythonpath {{ netbox_path }}/netbox/netbox --config {{ netbox_path }}/netbox/gunicorn.py netbox.wsgi'
+      changed_when: 0
+
+    # Copy the systemd service files for NetBox and NetBox RQ
+    - name: Copy NetBox systemd service files
+      copy:
+        src: "{{ netbox_path }}/netbox/contrib/{{ item }}"
+        dest: /etc/systemd/system/
+        remote_src: yes
+      with_items:
+        - netbox.service
+        - netbox-rq.service
+      register: systemd_config
+
+    # Reload the systemd daemon to pick up the new service files
+    - name: Reload systemd daemon
+      systemd:
+        daemon_reload: yes
+
+    # Start and enable the NetBox and NetBox RQ services
+    - name: Start and enable NetBox and NetBox RQ services
+      systemd:
+        name: "{{ item }}"
+        state: started
+        enabled: yes
+      with_items:
+        - netbox
+        - netbox-rq
+
+    # Check that the NetBox and NetBox RQ services are running
+    - name: Check NetBox and NetBox RQ services running
+      systemd:
+        name: "{{ item }}"
+        state: started
+      with_items:
+        - netbox
+        - netbox-rq

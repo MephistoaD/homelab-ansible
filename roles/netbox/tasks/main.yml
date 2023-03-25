@@ -1,0 +1,9 @@
+---
+- include_tasks: install.yml
+- include_tasks: configure.yml
+- include_tasks: setup_static_files.yml
+- include_tasks: setup_gunicorn.yml
+#- include_tasks: setup_nginx.yml
+- include_tasks: place_nginx_config.yml
+
+- include_tasks: create_fields.yml
