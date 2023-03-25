@@ -5,38 +5,15 @@
     apt:
       update_cache: yes
       force_apt_get: yes
-      cache_valid_time: "{{ update_cache_valid_time }}"
     changed_when: 0 # does not count as change
 
+# INCLUDES
 - name: DEB debian necessary packages
-  block:
-  - name: install gpg to add gpg keys
-    apt:
-      pkg:
-        - gpg
-      state: present
+  include_tasks: install_packages.yml
 
-- name: DEB debian administration
-  block:
-  - name: Install useful packages for administration
-    apt:
-      pkg: "{{ item }}"
-      state: present
-    loop: "{{ debian_global_packages }}"
-
-
-- name: DEB install guest agent on VMs
-  block:
-  - name: install guest agent
-    apt:
-      pkg:
-        - qemu-guest-agent
-      state: present
-    when: "'vm' in group_names"
-    notify:
-      - Reboot
-
-# IMPORTS
 - name: Import tasks to disable consistent device naming
   include_tasks: disable_consistent_device_naming.yml
   when: not 'lxc' in group_names # and not 'vm' in group_names
+
+- name: Import bashrc
+  include_tasks: bashrc.yml

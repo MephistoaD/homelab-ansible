@@ -15,7 +15,6 @@
       apt:
         update_cache: yes
         force_apt_get: yes
-        cache_valid_time: "{{ update_cache_valid_time }}"
       changed_when: 0 # does not count as change
 
 - name: PVE nag box
@@ -42,10 +41,10 @@
 
 - name: PVE bash
   block:
-  - name: Copy bashrc to node
+  - name: Copy bashrc_role to node
     copy:
-      src: bashrc
-      dest: /root/.bashrc
+      src: bashrc_role
+      dest: /root/.bashrc_role
       owner: root
       group: root
       mode: '0644'

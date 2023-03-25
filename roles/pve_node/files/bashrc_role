@@ -1,0 +1,23 @@
+
+# proxmox functions
+function conf() {
+    if [ -z "$1" ]; then
+        echo "Please specify a configuration file number."
+        return 1
+    fi
+
+    conf_file="$(find /etc/pve/nodes -type f | grep $1.conf)"
+
+    if [ ! -f "$conf_file" ]; then
+        echo "Configuration file not found."
+        return 1
+    fi
+
+    nano "$conf_file"
+}
+
+# shown on the prompt
+echo -e "Running LXCs:"
+pct list
+echo -e "\nRunning VMs:"
+qm list

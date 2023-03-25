@@ -1,8 +1,32 @@
 ---
-update_cache_valid_time: 10
-
 debian_version: bullseye
 
 debian_global_packages:
   # cpu / mem
   - htop
+
+shell_color: "{% if 'vm' in group_names %}red{% elif 'lxc' in group_names %}blue{% elif 'pve_node' in group_names %}yellow{% else %}green{% endif %}"
+# vm -> red, lxc -> blue, pve_node -> yellow, else -> green
+
+color_codes:
+  pink:
+    tilde: red
+    prompt: 31
+  green:
+    tilde: red
+    prompt: 32
+  yellow:
+    tilde: red
+    prompt: 33
+  purple:
+    tilde: red
+    prompt: 34
+  red:
+    tilde: blue
+    prompt: 35
+  blue:
+    tilde: red
+    prompt: 36
+  orange:
+    tilde: red
+    prompt: 37
