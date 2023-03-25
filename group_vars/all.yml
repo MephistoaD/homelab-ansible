@@ -1,7 +1,5 @@
 ---
 # file: group_vars/all
-update_cache_valid_time: 10
-
 debian_version: bullseye
 
 debian_global_packages:
@@ -23,12 +21,6 @@ debian_global_packages:
 
   # fs
   - tree
-
-  # ansible become_user
-  - sudo
-
-  # ansible find out if restart is needed
-  - debian-goodies
 
   # utility for other reasons
   - jq

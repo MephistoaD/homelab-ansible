@@ -1,7 +1,13 @@
+# any kind of vertificates:
+*.key
+*.pem
+
+# hosts files
 production.yml
 testing.yml
 
 # postfix
 sasl_passwd
 
+# contains tokens
 group_vars/netbox.yml

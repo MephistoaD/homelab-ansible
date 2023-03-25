@@ -4,7 +4,11 @@
 - import_playbook: pve_node.yml
 - import_playbook: pbs.yml
 - import_playbook: pve_proxy.yml
+
+# undeployed in prod
 - import_playbook: netbox.yml
+- import_playbook: rundeck.yml
 
 # TESTING
-- import_playbook: rundeck.yml
+- import_playbook: prometheus.yml
+- import_playbook: grafana.yml
