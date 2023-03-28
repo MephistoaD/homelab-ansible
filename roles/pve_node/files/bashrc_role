@@ -16,6 +16,31 @@ function conf() {
     nano "$conf_file"
 }
 
+function where() {
+    if [ -z "$1" ]; then
+        echo "Error: guest ID or name is required"
+        echo "Usage: where <guest_id|guest_name>"
+        echo "Examples:"
+        echo "where 200"
+        echo "where pihole"
+        return 1
+    fi
+
+    conf_files="$(grep -r "name:" /etc/pve/nodes | uniq | grep -i $1 | cut -d ':' -f1)"
+
+    for file in $conf_files; do
+      #echo $file
+      node_name=$(echo $file | cut -d "/" -f 5)
+      vmid=$(echo $file | grep -o -E '[0-9]+')
+      hostname=$(cat $file | grep -i "name: $1" | cut -d ' ' -f2 | head -n1)
+
+      # print the values
+      echo -e "$node_name\t$vmid\t$hostname"
+    done
+}
+
+
+
 # shown on the prompt
 echo -e "Running LXCs:"
 pct list
