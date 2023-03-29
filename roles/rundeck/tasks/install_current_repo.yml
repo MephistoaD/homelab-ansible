@@ -1,0 +1,38 @@
+---
+- name: Install packages
+  apt:
+    pkg: "{{ item }}"
+    state: present
+  loop:
+    - git
+
+- name: Clone repo
+  git: 
+    repo: https://github.com/MephistoaD/homelab-ansible.git
+    dest: /var/lib/rundeck/homelab-ansible
+
+- name: Read files with required python packages
+  shell: |
+    #!/bin/bash
+
+    # Definiere die Dateinamen in einer Shell-Variable
+    dateien=(requirements.txt)
+
+    # Führe für jede Datei einen cat-Befehl aus und entferne Kommentarzeilen mit sed
+    for datei in "${dateien[@]}"; do
+      cat "{{ rundeck_home_dir }}/homelab-ansible/$datei" | sed '/^\s*#/d; /^$/d'
+    done
+  register: requirements
+  args:
+    executable: /bin/bash
+  changed_when: false
+
+- name: Create list of required python packages
+  set_fact:
+    list: "{{ requirements.stdout_lines }}"
+
+- name: Install required python packages with pip3
+  become: true
+  pip:
+    name: "{{ item }}"
+  loop: "{{ list }}"

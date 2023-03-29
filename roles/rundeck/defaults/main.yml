@@ -1,2 +1,4 @@
 ---
-rundeck_fqdn: rundeck-testing.testing.lab
+rundeck_fqdn: rundeck.testing.lab
+install_current_repo: true
+rundeck_home_dir: /var/lib/rundeck

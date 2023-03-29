@@ -51,10 +51,10 @@
         name: "proxmox_type"
         description: "Proxmox type (VM or CT)"
         type: "select"
-        default: "LXC"
+        default: "lxc"
         choices:
-          - "LXC"
-          - "QEMU"
+          - "lxc"
+          - "vm"
 
   - name: Get names of all available roles
     delegate_to: localhost
@@ -72,7 +72,7 @@
       netbox_token: "{{ netbox_token }}"
       validate_certs: false
       data:
-        name: "role-{{ item }}"
+        name: "role_{{ item }}"
         description: "ansible role"
         color: "0066cc" # light blue
     loop: "{{ available_roles.stdout.split() }}"

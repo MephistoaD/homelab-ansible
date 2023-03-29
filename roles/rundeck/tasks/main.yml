@@ -1,4 +1,7 @@
 ---
 - include_tasks: place_nginx_config.yml
-
 - include_tasks: install_rundeck.yml
+
+- name: Install this repo
+  include_tasks: install_current_repo.yml
+  when: install_current_repo

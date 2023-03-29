@@ -20,7 +20,7 @@
   command: python3 -c "import sys; assert sys.version_info >= (3, 8)"
   register: python_version
   failed_when: python_version.rc != 0
-  changed_when: 0
+  changed_when: false
 
 - name: Download NetBox release
   get_url:
@@ -106,10 +106,10 @@
 
 - name: Create list of required python packages
   set_fact:
-    liste: "{{ requirements.stdout_lines }}"
+    list: "{{ requirements.stdout_lines }}"
 
 - name: Install required python packages with pip3
   become: true
   pip:
     name: "{{ item }}"
-  loop: "{{ liste }}"
+  loop: "{{ list }}"

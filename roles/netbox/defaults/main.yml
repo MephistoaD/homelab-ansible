@@ -22,12 +22,12 @@ netbox_admin_password: password
 netbox_token: "token" # netbox api token (needs to be added after install)
 
 custom_tags:
-  - name: "host-lxc"
+  - name: "host_lxc"
     description: "allows lxc-containers to be scheduled on that node"
     color: "ff6600" # PVE-orange
-  - name: "host-qemu"
-    description: "allows qemu-vms to be scheduled on that node"
+  - name: "host_vms"
+    description: "allows vms to be scheduled on that node"
     color: "ff6600" # PVE-orange
-  - name: "state-drained"
+  - name: "state_drained"
     description: "supresses the presence of guests on the node"
     color: "ff0000" # red

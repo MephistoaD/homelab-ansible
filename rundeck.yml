@@ -1,0 +1,7 @@
+---
+# file: rundeck.yml
+- hosts: rundeck
+  become: true
+  become_user: root
+  roles:
+    - rundeck
